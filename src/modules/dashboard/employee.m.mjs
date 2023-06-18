@@ -1,17 +1,17 @@
 import db from '#helper/db.mjs';
 import config from '#config/app.config.json' assert { type: 'json' };
 
-class _user {
+class _employee {
   list = async (query = {}) => {
     try {
       const { detail, roleName } = query;
-      const users = await db.user.findMany({
+      const employees = await db.employee.findMany({
         where: {
-          userRole: {
+          employeeRole: {
             every: {
-              OR: roleName?.split(',')?.map((name) => ({
+              OR: roleName?.split(',')?.map((nama) => ({
                 roleName: {
-                  equals: name,
+                  equals: nama,
                 },
               })),
             },
@@ -19,8 +19,10 @@ class _user {
         },
         select: {
           id: true,
-          name: true,
-          userRole: {
+          nama: true,
+          nik: true,
+          divisi: true,
+          employeeRole: {
             select: {
               roleName: true,
             },
@@ -29,14 +31,14 @@ class _user {
       });
       return {
         status: true,
-        data: users?.map(({ id, name, userRole: [{ roleName }] }) => ({
+        data: employees?.map(({ id, nama, employeeRole: [{ roleName }] }) => ({
           id,
-          name,
+          nama,
           role: roleName,
         })),
       };
     } catch (error) {
-      if (config.debug) console.error(`list user module error`, error);
+      if (config.debug) console.error(`list employee module error`, error);
       return {
         status: false,
         error,
@@ -46,7 +48,7 @@ class _user {
   detail = async (params = {}) => {
     try {
       const { id } = params;
-      const me = await db.user.findUniqueOrThrow({
+      const me = await db.employee.findUniqueOrThrow({
         where: {
           id: Number(id) || undefined,
         },
@@ -64,7 +66,7 @@ class _user {
         },
       };
     } catch (error) {
-      if (config.debug) console.error(`detail user module error`, error);
+      if (config.debug) console.error(`detail employee module error`, error);
       return {
         status: false,
         error,
@@ -73,19 +75,19 @@ class _user {
   };
   add = async (body = {}) => {
     try {
-      const { name, role } = body;
-      const { userRole: [{ roleName }], ...addUser } = await db.user.create({
+      const { nama, role } = body;
+      const { employeeRole: [{ roleName }], ...addEmployee } = await db.employee.create({
         data: {
-          name,
-          userRole: {
+          nama,
+          employeeRole: {
             connectOrCreate: {
               where: {
-                userName: name,
+                nama: nama,
               },
               create: {
                 role: {
                   connect: {
-                    name: role ?? 'User',
+                    nama: role ?? 'Employee',
                   },
                 },
               },
@@ -94,8 +96,8 @@ class _user {
         },
         select: {
           id: true,
-          name: true,
-          userRole: {
+          nama: true,
+          employeeRole: {
             select: {
               roleName: true,
             },
@@ -105,12 +107,12 @@ class _user {
       return {
         status: true,
         data: {
-          ...addUser,
+          ...addEmployee,
           role: roleName,
         },
       };
     } catch (error) {
-      if (config.debug) console.error(`add user module error`, error);
+      if (config.debug) console.error(`add employee module error`, error);
       return {
         status: false,
         error,
@@ -120,18 +122,18 @@ class _user {
   update = async (params = {}, body = {}) => {
     try {
       const { id } = params;
-      const { name, email, bio } = body;
-      const update = await db.user.update({
+      const { nama, email, bio } = body;
+      const update = await db.employee.update({
         where: {
           id: Number(id),
         },
         data: {
-          name,
+          nama,
           email,
         },
         select: {
           id: true,
-          name: true,
+          nama: true,
           email: true,
         },
       });
@@ -139,12 +141,12 @@ class _user {
         status: true,
         data: {
           id: update.id,
-          name: update.name,
+          nama: update.nama,
           email: update.email,
         },
       };
     } catch (error) {
-      if (config.debug) console.error(`update user module error`, error);
+      if (config.debug) console.error(`update employee module error`, error);
       return {
         status: false,
         error,
@@ -154,7 +156,7 @@ class _user {
   delete = async (params = {}) => {
     try {
       const { id } = params;
-      const deleteUser = await db.user.delete({
+      const deleteEmployee = await db.employee.delete({
         where: {
           id: Number(id),
         },
@@ -162,11 +164,11 @@ class _user {
       return {
         status: true,
         data: {
-          name: deleteUser.name,
+          name: deleteEmployee.nama,
         },
       };
     } catch (error) {
-      if (config.debug) console.error(`delete user module error`, error);
+      if (config.debug) console.error(`delete employee module error`, error);
       return {
         status: false,
         error,
@@ -175,4 +177,4 @@ class _user {
   };
 }
 
-export default new _user();
+export default new _employee();

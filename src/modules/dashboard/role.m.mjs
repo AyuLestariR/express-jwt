@@ -4,11 +4,11 @@ import config from '#config/app.config.json' assert { type: 'json' };
 class _role {
   add = async (body = {}) => {
     try {
-      const { name, path } = body;
+      const { nama, path } = body;
 
       const add = await db.role.create({
         data: {
-          name,
+          nama,
           access: {
             connectOrCreate: path?.map((p) => ({
               where: {
@@ -21,7 +21,7 @@ class _role {
           },
         },
         select: {
-          name: true,
+          nama: true,
         },
       });
       return {

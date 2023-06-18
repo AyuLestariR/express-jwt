@@ -1,10 +1,10 @@
 const roleData = [
   {
-    name: 'Admin',
+    nama: 'Admin',
     path: ['/'],
   },
   {
-    name: 'User',
+    nama: 'Member',
     path: ['/auth', '/api'],
   },
 ];

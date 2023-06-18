@@ -7,33 +7,62 @@ datasource db {
   url             = env("DATABASE_URL")
 }
 
-model User {
+model Divisi {
   id              Int               @id @default(autoincrement())
-  name            String            @unique
+  kode            String?           @unique @db.VarChar(10)
+  nama            String?           @unique
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relation Fields
+  employee        Employee[]
+}
+
+model Employee {
+  id              Int               @id @default(autoincrement())
+  nama            String            @unique
+  nik             String            @unique
+  divisi          Divisi            @relation(fields: [divisiName], references: [nama], onDelete: Cascade, onUpdate: Cascade)
+  divisiName      String            
+  jenis_kelamin   JenisKelamin      @default(Pria)
+  alamat          String?
+  no_hp           String?
+  email           String?
   username        String?           @unique
   password        String?
+  foto            String
+  in_active       Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   lastLogin       DateTime?         @updatedAt
 
   // Relation Fields
-  userRole        UserRole[]
-  todo            ToDo[]
+  employeeRole        EmployeeRole[]
+  presence            Presence[]
+  history             History[]
+
+}
+
+enum JenisKelamin {
+  Pria
+  Wanita
 }
 
 model Role {
   id              Int               @id @default(autoincrement())
-  name            String            @unique
+  nama            String            @unique
 
   // Relation Fields
-  userRole        UserRole[]
-  access          Access[]
+  employeeRole        EmployeeRole[]
+  access              Access[]
 }
 
-model UserRole {
+model EmployeeRole {
   // Relation Fields
-  user            User              @relation(fields: [userName], references: [name], onDelete: Cascade, onUpdate: Cascade)
-  userName        String            @id
-  role            Role              @relation(fields: [roleName], references: [name], onDelete: Cascade, onUpdate: Cascade)
-  roleName        String
+  employee            Employee              @relation(fields: [employeeNik], references: [nik], onDelete: Cascade, onUpdate: Cascade)
+  employeeNik         String            @id
+  role                Role              @relation(fields: [roleName], references: [nama], onDelete: Cascade, onUpdate: Cascade)
+  roleName            String
 }
 
 model Access {
@@ -44,24 +73,63 @@ model Access {
   roleId          Int
 }
 
-
-model Tag {
-  name            String            @id @unique
-
-  // Relation Fields
-  todo            ToDo[]
+model Office {
+    id              Int               @id @default(autoincrement())
+    nama            String
+    alamat          String
+    latitude        Float
+    longitude       Float
+    jarak           Float
+    createdAt       DateTime          @default(now())
+    updatedAt       DateTime          @updatedAt
 }
 
-model ToDo {
+model WorkingTime {
+    id              Int               @id @default(autoincrement())
+    jam_masuk       DateTime          @db.Time
+    jam_keluar      DateTime          @db.Time
+    createdAt       DateTime          @default(now())
+    updatedAt       DateTime          @updatedAt
+}
+
+model Presence {
+  id                  Int               @id @default(autoincrement())
+  employee            Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  employeeId          Int           
+  tanggal             DateTime            @db.Date
+  waktu               DateTime            @db.Time
+  gps                 String
+  jarak               Float
+  foto                String
+  presensiMasuk       Boolean             @default(true)
+
+  // Relation Fields
+  history             History[]
+  information         Information[]
+  status              Status[]
+          
+}
+
+model Status {
   id              Int               @id @default(autoincrement())
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  title           String
-  description     String?           @db.Text
-  completed       Boolean           @default(false)
+  nama            String            @unique
 
   // Relation Fields
-  user            User              @relation(fields: [username], references: [username], onDelete: Cascade, onUpdate: Cascade)
-  username        String
-  category        Tag[]
+  presence            Presence[]
 }
+
+model Information {
+  id                  Int               @id @default(autoincrement())
+  presence            Presence              @relation(fields: [presenceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  presenceId          Int
+}
+
+model History {
+  id                  Int               @id @default(autoincrement())
+  employee            Employee      @relation(fields: [employeeName], references: [nama], onDelete: Cascade, onUpdate: Cascade)
+  employeeName        String           
+  presence            Presence      @relation(fields: [presenceHistory], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  presenceHistory     Int 
+  
+}
+

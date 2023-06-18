@@ -19,7 +19,7 @@ const checkPermission = async (roleId = 6, targetUrl) => {
   return !!allowedPath.length;
 };
 
-const userAuth = async (req, res, next) => {
+const employeeAuth = async (req, res, next) => {
   const { headers, originalUrl } = req;
   const token = headers?.authorization?.startsWith('Bearer')
     ? headers?.authorization?.split(' ')[1]
@@ -41,20 +41,20 @@ const userAuth = async (req, res, next) => {
       throw new Error('Not Permitted');
     }
 
-    const user = await db.user.findUniqueOrThrow({
+    const employee = await db.employee.findUniqueOrThrow({
       where: {
-        username: decoded.id,
+        nik: decoded.id,
       },
       select: {
         id: true,
-        name: true,
-        username: true,
-        userRole: {
+        nama: true,
+        nik: true,
+      employeeRole: {
           select: {
             role: {
               select: {
                 id: true,
-                name: true,
+                nama: true,
               },
             },
           },
@@ -62,15 +62,15 @@ const userAuth = async (req, res, next) => {
       },
     });
 
-    req.user = {
-      ...user,
-      userRole: undefined,
-      role: user.userRole[0].role,
+    req.employee = {
+      ...employee,
+      employeeRole: undefined,
+      role: employee.employeeRole[0].role,
     };
 
     next();
   } catch (error) {
-    if (config.debug) console.error(`userAuth middleware helper error`, error);
+    if (config.debug) console.error(`employeeAuth middleware helper error`, error);
     response.send(res, {
       status: false,
       error,
@@ -78,4 +78,4 @@ const userAuth = async (req, res, next) => {
   }
 };
 
-export default userAuth;
+export default employeeAuth;

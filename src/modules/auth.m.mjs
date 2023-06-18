@@ -7,10 +7,17 @@ import jwt from 'jsonwebtoken';
 import { object, string } from 'yup';
 
 const schema = object({
-  name: string().label('Name').when(('$register', ([register], schema) => (register ? schema.required() : schema))),
-  username: string().label('Username').required(),
+  nama: string().label('Nama').when(('$register', ([register], schema) => (register ? schema.required() : schema))),
+  nik: string().label('Nik').required(),
+  divisiName: string().label('Divisi').when(('$register', ([register], schema) => (register ? schema.required() : schema))),
+  jenis_kelamin: string().label('Jenis Kelamin').when(('$register', ([register], schema) => (register ? schema.required() : schema))),
+  alamat: string().label('Alamat').when(('$register', ([register], schema) => (register ? schema.required() : schema))),
+  no_hp: string().label('Nomor Telepon').when(('$register', ([register], schema) => (register ? schema.required() : schema))),
+  email: string().label('Email').when(('$register', ([register], schema) => (register ? schema.required() : schema))),
+  username: string().label('Username').when(('$register', ([register], schema) => (register ? schema.required() : schema))),
   password: string().label('Password').required(),
-  role: string().label('Password'),
+  foto: string().label('Foto').when(('$register', ([register], schema) => (register ? schema.required() : schema))),
+  role: string().label('Role'),           
 });
 
 // extend session time to additional
@@ -20,37 +27,51 @@ const refreshTime = 2 * 60 * 60 * 1000;
 class _auth {
   register = async (body = {}) => {
     try {
-      const { name, username, password, role } = body;
+      const { nama, nik, divisiName, jenis_kelamin, alamat, no_hp, email, username, password, foto, role } = body;
 
       await schema.validate(body, { context: { register: true } });
 
-      const check = await db.user.findUnique({
+      const check = await db.employee.findUnique({
         where: {
-          name,
+          nama,
+          // divisiName,
+          // jenis_kelamin,
+          // alamat,
+          // no_hp,
+          // email,
+          // username,
+          // foto,
         },
       });
 
-      if (check?.username) {
+      if (check?.nik) {
         throw new Error('User already registered');
       }
 
       const pw = bcrypt.hashSync(password, 10);
 
-      let user = {};
+      let employee = {};
 
       if (check) {
-        user = await db.user.update({
+        employee = await db.employee.update({
           where: {
-            name,
+            nama,
           },
           data: {
+            nik,
+            divisiName,
+            jenis_kelamin,
+            alamat,
+            no_hp,
+            email,
             username,
             password: pw,
+            foto,
           },
           select: {
             id: true,
             name: true,
-            userRole: {
+            employeeRole: {
               select: {
                 roleName: true,
               },
@@ -58,20 +79,26 @@ class _auth {
           },
         });
       } else {
-        user = await db.user.create({
+        employee = await db.employee.create({
           data: {
-            name,
+            nama,
+            nik,
+            divisi,
+            jenis_kelamin,
+            alamat,
+            no_hp,
+            email,
             username,
             password: pw,
-            userRole: {
+            employeeRole: {
               connectOrCreate: {
                 where: {
-                  userName: name,
+                  employeeNik: nik,
                 },
                 create: {
                   role: {
                     connect: {
-                      name: role ?? 'User',
+                      nama: role ?? 'Member',
                     },
                   },
                 },
@@ -81,7 +108,7 @@ class _auth {
           select: {
             id: true,
             name: true,
-            userRole: {
+            employeeRole: {
               select: {
                 roleName: true,
               },
@@ -93,8 +120,17 @@ class _auth {
       return {
         status: true,
         data: {
-          name: user.name,
-          role: user.userRole?.map(({ roleName }) => roleName),
+          nama: employee.nama,
+          nik: employee.nik,
+          divisiName: employee.divisiName,
+          jenis_kelamin: employee.jenis_kelamin,
+          alamat: employee.alamat,
+          no_hp: employee.no_hp,
+          email: employee.email,
+          username: employee.username,
+          password:employee.password ,
+          foto: employee.foto,
+          role: employee.employeeRole?.map(({ roleName }) => roleName),
         },
       };
     } catch (error) {
@@ -107,27 +143,33 @@ class _auth {
   };
   login = async (body = {}) => {
     try {
-      const { username, password } = body;
+      const { nik, password } = body;
       const {
         jwt: { expired, secret },
       } = config;
 
       await schema.validate(body);
 
-      const check = await db.user.findUniqueOrThrow({
+      const check = await db.employee.findUniqueOrThrow({
         where: {
-          username,
+          nik,
         },
         select: {
+          nama: true,
+          nik: true,
+          divisi: true,
+          jenis_kelamin: true,
+          alamat: true,
+          no_hp: true,
+          email: true,
           username: true,
-          name: true,
           password: true,
-          userRole: {
+          employeeRole: {
             select: {
               role: {
                 select: {
                   id: true,
-                  name: true,
+                  nama: true,
                 },
               },
             },
@@ -144,9 +186,9 @@ class _auth {
       }
 
       const payload = {
-        id: check.username,
-        name: check.name,
-        role: check.userRole[0].role,
+        id: check.nik,
+        name: check.nama,
+        role: check.employeeRole[0].role,
       };
 
       const now = Date.now();
@@ -184,13 +226,13 @@ class _auth {
       };
     }
   };
-  session = async (user = {}) => {
+  session = async (member = {}) => {
     try {
       return {
         status: true,
         data: {
-          ...user,
-          role: user.role.name,
+          ...member,
+          role: employee.role.nama,
           session: undefined,
         },
       };
